@@ -9,9 +9,10 @@
 </head>
 
 <body>
-    <h1>this is another example of multiple select</h1>
-    <div>
-        <select multiple data-placeholder="Select businesses, You can choose some">
+    <h1>Test task : Vanilla JS Dropdown Select</h1>
+
+    <form>
+        <select class="select-businesses" name="business" multiple data-placeholder="Select businesses, You can choose some">
             <option value="0"> Construction</option>
             <option value="1">Financial</option>
             <option value="2">Manufacturing</option>
@@ -20,7 +21,17 @@
             <option value="5">Transportation</option>
             <option value="6">Other</option>
         </select>
-    </div>
+        <select class="select-businesses-2" name="business-2" multiple data-placeholder="Select businesses, You can choose some">
+            <option value="0"> Construction</option>
+            <option value="1">Financial</option>
+            <option value="2">Manufacturing</option>
+            <option value="3">Retail Services</option>
+            <option value="4">Energy</option>
+            <option value="5">Transportation</option>
+            <option value="6">Other</option>
+        </select>
+        <button class="submit">Submit</button>
+    </form>
 
 
 </body>

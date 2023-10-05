@@ -1,20 +1,26 @@
-const SelectMultiple = (function () {
-  let select;
-  let selectOptions;
-  let placeholder;
-  let newSelect;
+class SelectMultiple {
+  constructor(selector) {
+    this.select = document.querySelector(selector);
+    this.selectorUniqueId =
+      "selectMultiple" + selector.replace(".", "-").replace("#", "-");
+    this.selectOptions = Array.from(this.select.querySelectorAll("option"));
+    this.placeholder = this.select.dataset.placeholder;
+    this.newSelect = document.createElement("div");
 
-  function createActiveElement() {
+    this.init();
+  }
+
+  createActiveElement() {
     const active = document.createElement("div");
     active.classList.add("active");
 
     const span = document.createElement("span");
-    span.innerText = placeholder;
+    span.innerText = this.placeholder;
     active.appendChild(span);
 
-    selectOptions.forEach((option) => {
+    this.selectOptions.forEach((option) => {
       if (option.selected) {
-        active.appendChild(createSelectedLink(option));
+        active.appendChild(this.createSelectedLink(option));
       }
     });
 
@@ -25,12 +31,16 @@ const SelectMultiple = (function () {
     return active;
   }
 
-  function createOptionList() {
+  createOptionList() {
     const optionList = document.createElement("ul");
-
-    selectOptions.forEach((option) => {
+    optionList.className = "dropdown-select-list";
+    this.selectOptions.forEach((option) => {
       const item = document.createElement("li");
       item.dataset.value = option.value;
+      item.className = "dropdown-select-list__option";
+      if (option.selected) {
+        item.classList.add("selected");
+      }
       item.innerHTML = option.innerText;
       optionList.appendChild(item);
     });
@@ -38,7 +48,7 @@ const SelectMultiple = (function () {
     return optionList;
   }
 
-  function createSelectedLink(option) {
+  createSelectedLink(option) {
     const link = document.createElement("a");
     link.dataset.value = option.value;
     link.innerHTML = `<em>${option.innerText}</em><i></i>`;
@@ -46,121 +56,134 @@ const SelectMultiple = (function () {
     link.querySelector("i").addEventListener("click", (e) => {
       e.stopPropagation();
       e.preventDefault();
-      link.remove();
       option.selected = false;
-      updateActiveDiv();
-      saveSelectedOptions();
+      this.updateSelectedCards();
+      this.saveSelectedOptions();
     });
 
     return link;
   }
 
-  function addEventListeners() {
-    newSelect
-      .querySelector(".selectMultiple > div")
+  addEventListeners() {
+    this.newSelect
+      .querySelector(this.selectorUniqueId + " > div")
       .addEventListener("click", (e) => {
         e.stopPropagation();
-        newSelect.classList.toggle("open");
+        this.newSelect.classList.toggle("open");
       });
 
-    newSelect.querySelector(".active").addEventListener("click", (e) => {
-      e.stopPropagation();
-      const selectedOptions = Array.from(select.selectedOptions);
-    });
+    this.newSelect
+      .querySelectorAll(this.selectorUniqueId + " ul li")
+      .forEach((li) => {
+        li.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const value = li.dataset.value;
+          const option = this.select.querySelector(`option[value="${value}"]`);
 
-    newSelect.querySelectorAll(".selectMultiple ul li").forEach((li) => {
-      li.addEventListener("click", (e) => {
-        e.stopPropagation();
-        const value = li.dataset.value;
-        const option = select.querySelector(`option[value="${value}"]`);
+          if (option && !option.selected) {
+            option.selected = true;
+            option.setAttribute("selected", true);
+            this.newSelect
+              .querySelector(".active")
+              .appendChild(this.createSelectedLink(option));
+          } else {
+            option.selected = false;
+            option.setAttribute("selected", false);
+          }
 
-        if (option && !option.selected) {
-          option.selected = true;
-          newSelect
-            .querySelector(".active")
-            .appendChild(createSelectedLink(option));
-        }
-
-        li.classList.toggle("selected");
-        updateActiveDiv();
-        saveSelectedOptions();
+          li.classList.toggle("selected");
+          this.updateSelectedCards();
+          this.saveSelectedOptions();
+        });
       });
-    });
   }
 
-  function saveSelectedOptions() {
-    const selectedValues = Array.from(select.selectedOptions).map(
+  saveSelectedOptions() {
+    const selectedValues = Array.from(this.select.selectedOptions).map(
       (opt) => opt.value
     );
-    localStorage.setItem("selectedOptions", JSON.stringify(selectedValues));
+    localStorage.setItem(
+      this.selectorUniqueId + "selectedOptions",
+      JSON.stringify(selectedValues)
+    );
   }
 
-  function loadSelectedOptions() {
-    const selectedValuesJSON = localStorage.getItem("selectedOptions");
+  loadSelectedOptions() {
+    const selectedValuesJSON = localStorage.getItem(
+      this.selectorUniqueId + "selectedOptions"
+    );
 
     if (selectedValuesJSON) {
       const selectedValues = JSON.parse(selectedValuesJSON);
-
       selectedValues.forEach((value) => {
-        const option = select.querySelector(`option[value="${value}"]`);
-
+        const option = this.select.querySelector(`option[value="${value}"]`);
+        const liItemEl = document.querySelector(
+          this.selectorUniqueId + ` li[data-value="${value}"]`
+        );
+        liItemEl.classList.add("selected");
         if (option) {
           option.selected = true;
-          newSelect
+          this.newSelect
             .querySelector(".active")
-            .appendChild(createSelectedLink(option));
+            .appendChild(this.createSelectedLink(option));
         }
       });
-
-      updateActiveDiv();
+      this.updateSelectedCards();
     }
   }
 
-  function updateActiveDiv() {
-    const activeDiv = newSelect.querySelector(".active");
-    const selectedOptions = Array.from(select.selectedOptions);
+  updateSelectedCards() {
+    const activeDiv = this.newSelect.querySelector(".active");
+    const selectedOptions = Array.from(this.select.selectedOptions);
     const selectedValues = selectedOptions.map((opt) => opt.value);
-    const span = activeDiv.querySelector("span");
+    const placeHolder = activeDiv.querySelector("span");
     const aElements = activeDiv.querySelectorAll("a");
-
     if (selectedValues.length > 0) {
-      span.style.display = "none";
+      placeHolder.style.display = "none";
       aElements.forEach((aElement) => {
-        aElement.style.display = "inline-block";
+        if (selectedValues.includes(aElement.dataset.value)) {
+          aElement.classList.add("selected-item-card");
+        } else {
+          const liItemEl = document.querySelector(
+            this.selectorUniqueId +
+              ` li[data-value="${aElement.dataset.value}"]`
+          );
+          liItemEl.classList.remove("selected");
+          aElement.remove();
+        }
       });
     } else {
       aElements.forEach((aElement) => {
         aElement.style.display = "none";
+        aElement.classList.remove("selected-item-card");
       });
-      span.style.display = "inline-block";
+      placeHolder.style.display = "inline-block";
     }
   }
 
-  return {
-    init: function () {
-      select = document.querySelector("select[multiple]");
-      selectOptions = Array.from(select.querySelectorAll("option"));
-      placeholder = select.dataset.placeholder;
+  init() {
+    this.newSelect.classList.add(this.selectorUniqueId);
+    this.newSelect.classList.add("selectMultiple");
+    this.selectorUniqueId = "." + this.selectorUniqueId;
+    const active = this.createActiveElement();
+    const optionList = this.createOptionList();
 
-      newSelect = document.createElement("div");
-      newSelect.classList.add("selectMultiple");
+    this.newSelect.appendChild(active);
+    this.newSelect.appendChild(optionList);
+    this.select.parentElement.insertBefore(
+      this.newSelect,
+      this.select.nextSibling
+    );
+    this.newSelect.appendChild(this.select);
 
-      const active = createActiveElement();
-      const optionList = createOptionList();
-
-      newSelect.appendChild(active);
-      newSelect.appendChild(optionList);
-      select.parentElement.insertBefore(newSelect, select.nextSibling);
-      newSelect.appendChild(select);
-
-      addEventListeners();
-      loadSelectedOptions();
-    },
-  };
-})();
+    this.addEventListeners();
+    this.loadSelectedOptions();
+  }
+}
 
 document.addEventListener("DOMContentLoaded", function () {
-  SelectMultiple.init();
+  new SelectMultiple(".select-businesses");
+  new SelectMultiple(".select-businesses-2");
 
   document.body.addEventListener("click", function (e) {
     const selectMultiple = document.querySelector(".selectMultiple");
